@@ -504,7 +504,7 @@ struct AgentRow: View {
             hover = h
             if canJump { h ? NSCursor.pointingHand.push() : NSCursor.pop() }
         }
-        .help(canJump ? L("📞 \(agent.host.label)에서 열기 · \(agent.cwd)", "📞 \(agent.host.label)で開く · \(agent.cwd)") : L("어느 터미널인지 못 찾았어", "どのターミナルか見つからない"))
+        .help(canJump ? L("\(agent.host.label)에서 열기 · \(agent.cwd)", "\(agent.host.label)で開く · \(agent.cwd)") : L("어느 터미널인지 못 찾았어", "どのターミナルか見つからない"))
         .animation(.easeOut(duration: 0.12), value: hover)
     }
 
@@ -571,9 +571,9 @@ struct MenuPanel: View {
 
     var line: String {
         let n = agents.count(.needsInput), w = agents.count(.working)
-        if n > 0 { return L("もしもし? \(n)명이 대답 기다려", "もしもし? \(n)人が返事待ってるよ") }
-        if w > 0 { return L("\(w)명 통화 중. 방해 금지", "\(w)人が通話中。じゃましないでね") }
-        if agents.agents.isEmpty { return L("아무도 안 받네… 뚜- 뚜-", "だれも出ないね… ツー ツー") }
+        if n > 0 { return L("세션 \(n)개가 답을 기다리고 있어요", "セッション\(n)個が返事を待ってるよ") }
+        if w > 0 { return L("세션 \(w)개 작업 중이에요", "セッション\(w)個が作業中だよ") }
+        if agents.agents.isEmpty { return L("할 일이 없어서 심심해… 일 시켜줘!", "やることなくてひま… 仕事ちょうだい!") }
         return L("다들 대기 중. 조용~", "みんな待機中。しーん…")
     }
 
@@ -583,7 +583,7 @@ struct MenuPanel: View {
             HStack(alignment: .center, spacing: 12) {
                 Mascot(size: 58, mood: agentMood(agents))
                 VStack(alignment: .leading, spacing: 6) {
-                    Chip(text: "📞 클로드쿤 · クロードくん")
+                    Chip(text: L("📌 클로드쿤", "📌 クロードくん"))
                     Bubble {
                         Text(line).font(round(12.5, .bold)).foregroundStyle(Pal.ink)
                             .fixedSize(horizontal: false, vertical: true)
@@ -671,7 +671,7 @@ struct CmuxAuthCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(L("📞 cmux가 전화를 안 받아", "📞 cmuxが電話に出ない")).font(round(13, .heavy)).foregroundStyle(Pal.onPastel)
+                Text(L("cmux 연결이 막혀 있어요", "cmuxにつながらないよ")).font(round(13, .heavy)).foregroundStyle(Pal.onPastel)
                 Spacer()
                 Button { agents.cmuxNeedsAuth = false } label: { Image(systemName: "xmark").font(.system(size: 10, weight: .heavy)) }
                     .buttonStyle(.plain).foregroundStyle(Pal.onPastel)

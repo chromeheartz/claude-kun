@@ -21,8 +21,8 @@ function msg(reason) {
   let lang = "ko";
   try { lang = fs.readFileSync(path.join(ROOT, "lang"), "utf8").trim(); } catch {}
   return lang === "ja"
-    ? "📞 クロードくん: もしもし?このまま送る?\n" + reason + "\n(そのままもう一度送れば通るよ)"
-    : "📞 클로드쿤: もしもし? 이거 그냥 보내게?\n" + reason + "\n(그대로 다시 보내면 통과돼)";
+    ? "🧡 クロードくん: ちょっと待って、このまま送る?\n" + reason + "\n(そのままもう一度送れば通るよ)"
+    : "🧡 클로드쿤: 잠깐! 이거 그냥 보내게?\n" + reason + "\n(그대로 다시 보내면 통과돼)";
 }
 
 const sleep = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
