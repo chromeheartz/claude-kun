@@ -21,12 +21,12 @@ macOS 메뉴바에 사는 작은 Claude Code 세션 비서.<br>
   <img src="docs/menu-dark.png" width="380" alt="다크 모드">
 </p>
 
-- **상태별 묶음** — `입력 필요` · `작업 중` · `대기` · `완료` 순으로 정렬. 대답 기다리는 세션이 항상 맨 위.
-- **클릭하면 그 탭으로** — cmux / Orca 에서 연 세션은 해당 워크스페이스·탭으로 바로 이동. 백그라운드 세션은 붙어 있는 탭을 찾아가고, 없으면 새로 attach.
-- **이름 바꾸기 ✏️** — 행에 마우스를 올려 연필을 누르면 그 세션에 `/rename` 을 대신 입력. 목록엔 즉시 반영(낙관적 업데이트), 실패하면 원래대로.
-- **종료 / 지우기** — 살아 있는 세션은 `종료` (대화는 남아서 `claude --resume` · `claude attach` 로 이어가기 가능). 이미 끝난 백그라운드 세션은 `지우기` 로 목록 정리.
-- **오늘 비용 · 세션 출력 토큰** — 하단에 작게.
-- **한국어 / 日本語** — `⚙ 설정` 에서 전환.
+- **상태별 묶음**: `입력 필요` · `작업 중` · `대기` · `완료` 순으로 정렬. 답을 기다리는 세션이 항상 맨 위. 같은 상태 안에서는 cmux / Orca / 백그라운드끼리 모아서 보여줘요.
+- **클릭하면 그 탭으로**: cmux / Orca 에서 연 세션은 해당 워크스페이스·탭으로 바로 이동. 백그라운드 세션은 붙어 있는 탭을 찾아가고, 없으면 새로 attach.
+- **이름 바꾸기 ✏️**: 행에 마우스를 올려 연필을 누르면 그 세션에 `/rename` 을 대신 입력. 목록엔 즉시 반영(낙관적 업데이트), 실패하면 원래대로.
+- **종료 / 지우기**: 살아 있는 세션은 `종료` (대화는 남아서 `claude --resume` · `claude attach` 로 이어가기 가능). 이미 끝난 백그라운드 세션은 `지우기` 로 목록 정리.
+- **오늘 비용 · 세션 출력 토큰**: 하단에 작게.
+- **한국어 / 日本語**: `⚙ 설정` 에서 전환.
 
 ### 메뉴바 아이콘 표정
 
@@ -54,11 +54,13 @@ Claude Code 훅을 연결하면 프롬프트가 **전송되기 전에** 한 번 
 ```bash
 git clone https://github.com/chromeheartz/claude-kun.git
 cd claude-kun
-swift build -c release
-.build/release/ClaudeKun &
+./scripts/make-app.sh          # dist/ClaudeKun.app, dist/ClaudeKun.dmg 생성
+cp -R dist/ClaudeKun.app /Applications/
+open /Applications/ClaudeKun.app
 ```
 
-로그인할 때 자동으로 켜고 싶으면 `시스템 설정 → 일반 → 로그인 항목` 에 `.build/release/ClaudeKun` 을 추가하세요.
+Launchpad / Spotlight 에서 `ClaudeKun` 으로 켤 수 있어요. 로그인할 때 자동으로 켜려면 `시스템 설정 → 일반 → 로그인 항목` 에 추가하세요.
+ad-hoc 서명이라 다른 맥에서 처음 열 때는 우클릭 → 열기가 한 번 필요해요.
 
 ### 토큰 코치 훅 연결 (선택)
 

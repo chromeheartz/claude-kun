@@ -813,4 +813,24 @@ if CommandLine.arguments.contains("--render") {
     exit(0)
 }
 
+// 앱 아이콘: --icon <out.png> (1024px, scripts/make-app.sh 에서 사용)
+if let i = CommandLine.arguments.firstIndex(of: "--icon"), i + 1 < CommandLine.arguments.count {
+    MainActor.assumeIsolated {
+        NSApplication.shared.appearance = NSAppearance(named: .aqua)
+        let icon = ZStack {
+            RoundedRectangle(cornerRadius: 185).fill(Pal.bg)
+            DotBackground().clipShape(RoundedRectangle(cornerRadius: 185))
+            RoundedRectangle(cornerRadius: 185).strokeBorder(Pal.ink, lineWidth: 24)
+            Mascot(size: 620, mood: .ok, animate: false)
+        }
+        .frame(width: 824, height: 824).padding(100)
+        let r = ImageRenderer(content: icon.environment(\.colorScheme, .light))
+        if let img = r.nsImage, let tiff = img.tiffRepresentation,
+           let png = NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:]) {
+            try? png.write(to: URL(fileURLWithPath: CommandLine.arguments[i + 1]))
+        }
+    }
+    exit(0)
+}
+
 ClaudeKunApp.main()

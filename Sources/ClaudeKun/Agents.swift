@@ -22,6 +22,9 @@ enum Host: Equatable {
     case orca(tabId: String, leafId: String?)
     case background(id: String)
     case unknown
+    var rank: Int {
+        switch self { case .cmux: 0; case .orca: 1; case .background: 2; case .unknown: 3 }
+    }
     var label: String {
         switch self {
         case .cmux: "cmux"
@@ -287,7 +290,8 @@ func collectAgents() -> [Agent] {
                      subtitle: sub.isEmpty ? (r.cwd as NSString).abbreviatingWithTildeInPath : sub,
                      cwd: r.cwd, status: status(r), host: host, lastActive: mtime, contextTokens: ctx, pid: r.pid, bgId: r.kind == "background" ? r.id : nil)
     }
-    .sorted { ($0.status.rawValue, -($0.lastActive?.timeIntervalSince1970 ?? 0)) < ($1.status.rawValue, -($1.lastActive?.timeIntervalSince1970 ?? 0)) }
+    // 상태 → 앱(cmux, Orca, 백그라운드, 터미널) → 최근 순
+    .sorted { ($0.status.rawValue, $0.host.rank, -($0.lastActive?.timeIntervalSince1970 ?? 0)) < ($1.status.rawValue, $1.host.rank, -($1.lastActive?.timeIntervalSince1970 ?? 0)) }
 }
 
 // ───────── 이동 ─────────
