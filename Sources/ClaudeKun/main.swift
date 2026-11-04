@@ -47,23 +47,42 @@ extension Color {
     }
 }
 
+// ───────── 스타일: 귀여움(스티커) / 터미널(todoru.sh 풍) ─────────
+
+enum UIStyle: String, CaseIterable { case cute, terminal }
+nonisolated(unsafe) var forceCute = false   // --icon 은 항상 귀여움으로
+var term: Bool { !forceCute && UserDefaults.standard.string(forKey: "style") == UIStyle.terminal.rawValue }
+
+/// 터미널은 라이트/다크 상관없이 항상 어두운 색
+private func T(_ h: UInt32) -> Color { Color(h, h) }
+
 enum Pal {
-    static let bg     = Color(0xfff5e9, 0x2b211c)
-    static let dot    = Color(0xf1dcc3, 0x3e3029)
-    static let card   = Color(0xfffdf8, 0x372a23)
-    static let ink    = Color(0x4b3428, 0xfbeee0)
-    static let shadow = Color(0x4b3428, 0x170f0b)
-    static let muted  = Color(0x86695a, 0xb49c8a)
-    static let coral  = Color(0xff8a65, 0xff9a78)
-    static let peach  = Color(0xffcdb5, 0xf2b59a)
-    static let butter = Color(0xffe39a, 0xf3d27c)
-    static let sage   = Color(0xcde5bb, 0xb5d29f)
-    static let sky    = Color(0xc6e1f5, 0xa9cbe6)
-    static let pink   = Color(0xfbcadb, 0xeeafc3)
-    static let onPastel = Color(0x4b3428, 0x2b211c)
+    static var bg: Color     { term ? T(0x121216) : Color(0xfff5e9, 0x2b211c) }
+    static var dot: Color    { term ? T(0x121216) : Color(0xf1dcc3, 0x3e3029) }
+    static var card: Color   { term ? T(0x17171c) : Color(0xfffdf8, 0x372a23) }
+    static var ink: Color    { term ? T(0xe4e4e7) : Color(0x4b3428, 0xfbeee0) }
+    static var shadow: Color { term ? .clear : Color(0x4b3428, 0x170f0b) }
+    static var muted: Color  { term ? T(0x8b8b96) : Color(0x86695a, 0xb49c8a) }
+    static var coral: Color  { term ? T(0xf87171) : Color(0xff8a65, 0xff9a78) }
+    static var peach: Color  { term ? T(0xfbbf24) : Color(0xffcdb5, 0xf2b59a) }
+    static var butter: Color { term ? T(0xfbbf24) : Color(0xffe39a, 0xf3d27c) }
+    static var sage: Color   { term ? T(0x4ade80) : Color(0xcde5bb, 0xb5d29f) }
+    static var sky: Color    { term ? T(0x60a5fa) : Color(0xc6e1f5, 0xa9cbe6) }
+    static var pink: Color   { term ? T(0x60a5fa) : Color(0xfbcadb, 0xeeafc3) }
+    static var onPastel: Color { term ? T(0xe4e4e7) : Color(0x4b3428, 0x2b211c) }
+    static var lilacish: Color { term ? T(0xc084fc) : Color(0xddd2f5, 0xc6b8ea) }
+    static var line: Color   { term ? T(0x2a2a32) : Color(0xf0dfcb, 0x4a3a31) }
+    /// 테두리: 귀여움은 진한 잉크, 터미널은 옅은 회색 1px
+    static var stroke: Color { term ? T(0x2a2a32) : ink }
 }
 
-func round(_ size: CGFloat, _ w: Font.Weight = .semibold) -> Font { .system(size: size, weight: w, design: .rounded) }
+/// 터미널에선 색 면을 옅게 깔고 글자는 밝게
+func soft(_ c: Color) -> Color { term ? c.opacity(0.18) : c }
+func lw(_ w: CGFloat) -> CGFloat { term ? 1 : w }
+/// 귀여움은 캡슐, 터미널은 각진 상자
+func Pill() -> RoundedRectangle { RoundedRectangle(cornerRadius: term ? 4 : 999) }
+
+func round(_ size: CGFloat, _ w: Font.Weight = .semibold) -> Font { .system(size: size, weight: w, design: term ? .monospaced : .rounded) }
 
 // ───────── 스티커 부품 ─────────
 
@@ -92,8 +111,8 @@ struct Sticker: ViewModifier {
     var lift: CGFloat = 4
     func body(content: Content) -> some View {
         content
-            .background(RoundedRectangle(cornerRadius: radius).fill(fill))
-            .overlay(RoundedRectangle(cornerRadius: radius).strokeBorder(Pal.ink, lineWidth: 2))
+            .background(RoundedRectangle(cornerRadius: term ? 8 : radius).fill(soft(fill)))
+            .overlay(RoundedRectangle(cornerRadius: term ? 8 : radius).strokeBorder(Pal.stroke, lineWidth: lw(2)))
             .background(RoundedRectangle(cornerRadius: radius).fill(Pal.shadow).offset(y: lift))
     }
 }
@@ -123,12 +142,12 @@ struct PopButton: ButtonStyle {
         return configuration.label
             .font(round(small ? 10.5 : 13, .bold)).foregroundStyle(text)
             .padding(.horizontal, small ? 8 : 14).padding(.vertical, small ? 3 : 8)
-            .background(Capsule().fill(fill))
-            .overlay(Capsule().strokeBorder(Pal.ink, lineWidth: 2))
+            .background(Pill().fill(soft(fill)))
+            .overlay(Pill().strokeBorder(Pal.stroke, lineWidth: lw(2)))
             .offset(y: down ? 3 : 0)
-            .background(Capsule().fill(Pal.shadow).offset(y: 3))
+            .background(Pill().fill(Pal.shadow).offset(y: 3))
             .animation(.spring(duration: 0.15), value: down)
-            .contentShape(Capsule())
+            .contentShape(Pill())
     }
 }
 
@@ -277,7 +296,7 @@ struct PendingView: View {
         .frame(width: 400)
         .background(DotBackground())
         .clipShape(RoundedRectangle(cornerRadius: 22))
-        .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(Pal.ink, lineWidth: 2.5))
+        .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(Pal.stroke, lineWidth: lw(2.5)))
     }
 }
 
@@ -326,15 +345,15 @@ struct Gauge: View {
         let mood = Mood(percent: percent)
         GeometryReader { g in
             ZStack(alignment: .leading) {
-                Capsule().fill(Pal.card)
-                Capsule().fill(mood.color)
+                Pill().fill(soft(Pal.card))
+                Pill().fill(soft(mood.color))
                     .frame(width: max(14, g.size.width * CGFloat(min(percent, 100)) / 100))
                     .animation(.spring(duration: 0.5), value: percent)
                 // 60% 경고선
                 Rectangle().fill(Pal.ink.opacity(0.35)).frame(width: 2, height: 8)
                     .offset(x: g.size.width * 0.6 - 1)
             }
-            .overlay(Capsule().strokeBorder(Pal.ink, lineWidth: 2))
+            .overlay(Pill().strokeBorder(Pal.stroke, lineWidth: lw(2)))
         }
         .frame(height: 16)
     }
@@ -358,13 +377,12 @@ struct TurnRow: View {
         HStack(spacing: 3) {
             Text(label).font(round(9)).foregroundStyle(Pal.onPastel)
                 .padding(.horizontal, 4).padding(.vertical, 1)
-                .background(RoundedRectangle(cornerRadius: 5).fill(c))
+                .background(RoundedRectangle(cornerRadius: 5).fill(soft(c)))
             Text(fmtK(n)).font(round(11, .semibold)).foregroundStyle(Pal.ink).monospacedDigit()
         }
     }
 }
 
-extension Pal { static let lilacish = Color(0xddd2f5, 0xc6b8ea) }
 
 extension AgentStatus {
     var color: Color {
@@ -383,7 +401,7 @@ struct StatusDot: View {
     @State private var on = false
     var body: some View {
         Circle().fill(status.color)
-            .overlay(Circle().strokeBorder(Pal.ink, lineWidth: 1.6))
+            .overlay(Circle().strokeBorder(Pal.stroke, lineWidth: lw(1.6)))
             .frame(width: 11, height: 11)
             .scaleEffect(status == .needsInput && on ? 1.25 : 1)
             .opacity(status == .working && on ? 0.35 : 1)
@@ -407,11 +425,10 @@ struct AgentRow: View {
     @State private var draft = ""
     @FocusState private var focused: Bool
     var canJump: Bool { agent.host != .unknown }
-    var canRename: Bool {
-        guard agent.status == .idle else { return false }
-        switch agent.host { case .cmux, .orca: return true; default: return false }
-    }
-    var canStop: Bool { agent.bgId != nil || (agent.status != .done && agent.pid != nil) }
+    var canRename: Bool { agent.renamable }
+    var canStop: Bool { agent.stoppable }
+    var num: Int { (agentStore.agents.firstIndex { $0.id == agent.id } ?? 0) + 1 }
+    var picked: Bool { agentStore.cursor == num - 1 }
 
     var body: some View {
         if editing { editor } else { row }
@@ -424,8 +441,8 @@ struct AgentRow: View {
             TextField(agent.title, text: $draft)
                 .textFieldStyle(.plain).font(round(13, .bold)).foregroundStyle(Pal.ink)
                 .padding(.horizontal, 8).padding(.vertical, 5)
-                .background(Capsule().fill(Pal.card))
-                .overlay(Capsule().strokeBorder(Pal.ink, lineWidth: 1.4))
+                .background(Pill().fill(soft(Pal.card)))
+                .overlay(Pill().strokeBorder(Pal.stroke, lineWidth: lw(1.4)))
                 .focused($focused)
                 .onSubmit(save)
                 .onExitCommand { editing = false }
@@ -449,22 +466,28 @@ struct AgentRow: View {
         HStack(spacing: 6) {
             Button {
                 guard canJump else { return }
-                // 창을 연 채로 다른 모니터 앱으로 넘어가면 메뉴바 창이 그 모니터로 따라가 다시 뜸 → 먼저 닫고 점프
-                NSApp.windows.filter { $0.className.contains("MenuBarExtra") }.forEach { $0.close() }
-                jump(to: agent)
+                openAgent(agent)
             } label: {
-                HStack(alignment: .center, spacing: 10) {
+                HStack(alignment: .center, spacing: 8) {
+                    // 명령 팔레트에서 부르는 번호 (/jump 3)
+                    Text(picked ? "❯" : "\(num)").font(round(10, picked ? .heavy : .medium))
+                        .foregroundStyle(picked ? (term ? Pal.sage : Pal.coral) : Pal.muted).monospacedDigit()
+                        .frame(width: 16, alignment: .trailing)
                     StatusDot(status: agent.status)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(agent.title).font(round(13, .bold)).foregroundStyle(Pal.ink).lineLimit(1)
-                        Text(agent.subtitle).font(round(11, .medium)).foregroundStyle(Pal.muted).lineLimit(1)
+                        Text((term ? "└ " : "") + agent.subtitle).font(round(11, .medium)).foregroundStyle(Pal.muted).lineLimit(1)
                     }
                     Spacer(minLength: 6)
                     VStack(alignment: .trailing, spacing: 3) {
-                        Text(agent.host.label).font(round(9.5, .bold)).foregroundStyle(Pal.onPastel)
-                            .padding(.horizontal, 6).padding(.vertical, 1.5)
-                            .background(Capsule().fill(hostColor))
-                            .overlay(Capsule().strokeBorder(Pal.ink, lineWidth: 1.2))
+                        if term {
+                            Text("[\(agent.host.label)]").font(round(10, .medium)).foregroundStyle(hostColor)
+                        } else {
+                            Text(agent.host.label).font(round(9.5, .bold)).foregroundStyle(Pal.onPastel)
+                                .padding(.horizontal, 6).padding(.vertical, 1.5)
+                                .background(Pill().fill(hostColor))
+                                .overlay(Pill().strokeBorder(Pal.stroke, lineWidth: lw(1.2)))
+                        }
                         HStack(spacing: 4) {
                             if agent.contextTokens > 0 { Text(fmtK(agent.contextTokens)) }
                             Text(ago(agent.lastActive))
@@ -473,7 +496,7 @@ struct AgentRow: View {
                     }
                     if !(canStop && (hover || armed)) {
                         Image(systemName: "arrow.up.right").font(.system(size: 10, weight: .heavy))
-                            .foregroundStyle(Pal.ink).opacity(hover && canJump ? 1 : 0)
+                            .foregroundStyle(Pal.ink).opacity((hover || picked) && canJump ? 1 : 0)
                     }
                 }
                 .contentShape(Rectangle())
@@ -499,7 +522,8 @@ struct AgentRow: View {
             }
         }
         .padding(.horizontal, 10).padding(.vertical, 8)
-        .background(RoundedRectangle(cornerRadius: 11).fill(hover && canJump ? agent.status.color.opacity(0.45) : .clear))
+        .background(RoundedRectangle(cornerRadius: 11).fill((hover || picked) && canJump ? agent.status.color.opacity(term ? 0.14 : 0.45) : .clear))
+        .id(agent.id)   // ↑↓ 로 고르면 여기로 스크롤
         .onHover { h in
             hover = h
             if canJump { h ? NSCursor.pointingHand.push() : NSCursor.pop() }
@@ -513,7 +537,181 @@ struct AgentRow: View {
         case .cmux: Pal.lilacish
         case .orca: Pal.peach
         case .background: Pal.pink
-        case .unknown: Pal.card
+        case .unknown: term ? Pal.muted : Pal.card
+        }
+    }
+}
+
+extension Agent {
+    var renamable: Bool {
+        guard status == .idle else { return false }
+        switch host { case .cmux, .orca: return true; default: return false }
+    }
+    var stoppable: Bool { bgId != nil || (status != .done && pid != nil) }
+}
+
+/// 창을 연 채로 다른 모니터 앱으로 넘어가면 메뉴바 창이 그 모니터로 따라가 다시 뜸 → 먼저 닫고 점프
+@MainActor func openAgent(_ a: Agent) {
+    NSApp.windows.filter { $0.className.contains("MenuBarExtra") }.forEach { $0.close() }
+    jump(to: a)
+}
+
+// ───────── 명령 팔레트: / 치면 자동완성, 번호로 세션 지정 ─────────
+
+struct Cmd { let name: String; let args: String; let desc: String }
+
+@MainActor var commands: [Cmd] { [
+    Cmd(name: "/jump", args: "<n>", desc: L("그 탭으로 이동 (번호만 쳐도 돼)", "そのタブへ移動(番号だけでもOK)")),
+    Cmd(name: "/rename", args: "<n> <이름>", desc: L("세션 이름 바꾸기", "セッション名を変える")),
+    Cmd(name: "/stop", args: "<n>", desc: L("세션 종료 (완료된 건 목록에서 지우기)", "セッション終了(完了は一覧から削除)")),
+    Cmd(name: "/clean", args: "", desc: L("완료된 세션 전부 지우기", "完了セッションを全部削除")),
+    Cmd(name: "/style", args: "", desc: L("귀여움 ↔ 터미널", "かわいい ↔ ターミナル")),
+    Cmd(name: "/lang", args: "", desc: L("한국어 ↔ 日本語", "한국어 ↔ 日本語")),
+] }
+
+struct CommandBar: View {
+    @Bindable var agents: AgentStore
+    var toggleLang: () -> Void
+    var toggleStyle: () -> Void
+    @Binding var paletteOpen: Bool
+    @State private var text = ""
+    @State private var sel = 0
+    @State private var msg: (text: String, ok: Bool)?
+    @FocusState private var focused: Bool
+
+    var head: String { String(text.split(separator: " ").first ?? "").lowercased() }
+    var matches: [Cmd] {
+        guard text.hasPrefix("/"), !text.contains(" ") else { return [] }
+        return commands.filter { $0.name.hasPrefix(head) }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if !matches.isEmpty { palette }
+            if let m = msg {
+                Text(m.text).font(round(11, .medium)).foregroundStyle(m.ok ? (term ? Pal.sage : Pal.muted) : Pal.coral)
+                    .padding(.leading, 6)
+            }
+            HStack(spacing: 8) {
+                Text("❯").font(round(13, .heavy)).foregroundStyle(term ? Pal.sage : Pal.coral)
+                if renderMode {   // ImageRenderer 는 TextField 를 못 그려서 자리만
+                    Text(L("↑↓ 세션 고르기 · Enter 이동 · / 명령어", "↑↓ で選択 · Enter で移動 · / コマンド"))
+                        .font(round(12, .medium)).foregroundStyle(Pal.muted)
+                    Spacer(minLength: 0)
+                } else {
+                TextField(L("↑↓ 세션 고르기 · Enter 이동 · / 명령어", "↑↓ で選択 · Enter で移動 · / コマンド"), text: $text)
+                    .textFieldStyle(.plain).font(round(12, .medium)).foregroundStyle(Pal.ink)
+                    .focused($focused)
+                    .onSubmit(submit)
+                    .onExitCommand { text = "" }
+                    .onKeyPress(.upArrow) { move(-1) }
+                    .onKeyPress(.downArrow) { move(1) }
+                    .onKeyPress(.tab) { complete() ? .handled : .ignored }
+                    .onChange(of: text) { sel = 0; paletteOpen = !matches.isEmpty }
+                }
+            }
+            .padding(.horizontal, 10).padding(.vertical, 7)
+            .sticker(Pal.card, radius: 12, lift: 3)
+        }
+        .onAppear { focused = true; agents.cursor = nil }
+    }
+
+    var palette: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            ForEach(Array(matches.enumerated()), id: \.element.name) { i, c in
+                HStack(spacing: 8) {
+                    Text(c.name + (c.args.isEmpty ? "" : " " + c.args))
+                        .font(round(11.5, .bold)).foregroundStyle(term ? Pal.butter : Pal.ink)
+                        .frame(width: 150, alignment: .leading)
+                    Text(c.desc).font(round(11, .medium)).foregroundStyle(i == sel ? Pal.ink : Pal.muted).lineLimit(1)
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 8).padding(.vertical, 4)
+                .background(RoundedRectangle(cornerRadius: term ? 4 : 8)
+                    .fill(i == sel ? (term ? Pal.sage.opacity(0.15) : Pal.butter) : .clear))
+                .contentShape(Rectangle())
+                .onTapGesture { sel = i; _ = complete(); focused = true }
+            }
+            Text(L("↑↓ 이동 · Tab 완성 · Enter 실행 · Esc 지우기", "↑↓ 移動 · Tab 補完 · Enter 実行 · Esc 消す"))
+                .font(round(10, .medium)).foregroundStyle(Pal.muted).padding(.horizontal, 8).padding(.top, 3)
+        }
+        .padding(6)
+        .sticker(Pal.card, radius: 12, lift: 3)
+    }
+
+    func move(_ d: Int) -> KeyPress.Result {
+        if matches.isEmpty {
+            let n = agents.agents.count
+            guard text.isEmpty, n > 0 else { return .ignored }
+            agents.cursor = agents.cursor.map { min(max($0 + d, 0), n - 1) } ?? 0
+            return .handled
+        }
+        sel = (sel + d + matches.count) % matches.count
+        return .handled
+    }
+
+    /// 고른 명령으로 채움. 인자 필요한 명령은 뒤에 칸을 띄워 바로 번호를 치게
+    @discardableResult func complete() -> Bool {
+        guard matches.indices.contains(sel) else { return false }
+        let c = matches[sel]
+        text = c.name + (c.args.isEmpty ? "" : " ")
+        return true
+    }
+
+    func submit() {
+        if text.trimmingCharacters(in: .whitespaces).isEmpty {
+            if let c = agents.cursor, agents.agents.indices.contains(c), agents.agents[c].host != .unknown { openAgent(agents.agents[c]) }
+            return
+        }
+        // "/re" 처럼 덜 친 채 Enter: 고른 명령으로 채우고, 인자 없는 명령이면 바로 실행
+        if !matches.isEmpty, !commands.contains(where: { $0.name == head }) {
+            complete()
+            if text.hasSuffix(" ") { focused = true; return }
+        }
+        let t = text.trimmingCharacters(in: .whitespaces)
+        text = ""
+        focused = true
+        guard !t.isEmpty else { return }
+        run(t)
+        let shown = msg?.text
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4) { if msg?.text == shown { msg = nil } }
+    }
+
+    func agent(_ s: Substring?) -> Agent? {
+        guard let s, let n = Int(s), agents.agents.indices.contains(n - 1) else {
+            msg = (L("번호를 확인해줘 (1~\(agents.agents.count))", "番号を確認してね(1〜\(agents.agents.count))"), false)
+            return nil
+        }
+        return agents.agents[n - 1]
+    }
+
+    func run(_ t: String) {
+        let p = t.split(separator: " ", maxSplits: 2, omittingEmptySubsequences: true)
+        if Int(t) != nil, let a = agent(Substring(t)) { openAgent(a); return }
+        switch p[0].lowercased() {
+        case "/jump", "/j", "/open":
+            guard let a = agent(p.count > 1 ? p[1] : nil) else { return }
+            guard a.host != .unknown else { msg = (L("어느 터미널인지 못 찾았어", "どのターミナルか見つからない"), false); return }
+            openAgent(a)
+        case "/rename":
+            guard let a = agent(p.count > 1 ? p[1] : nil) else { return }
+            guard p.count > 2 else { msg = (L("새 이름도 써줘: /rename \(p[1]) 새이름", "新しい名前も: /rename \(p[1]) 名前"), false); return }
+            guard a.renamable else { msg = (L("대기 중인 cmux/Orca 세션만 바꿀 수 있어", "待機中の cmux/Orca セッションだけ変えられるよ"), false); return }
+            rename(a, to: String(p[2]))
+            msg = (L("→ \(p[2]) 로 바꾸는 중", "→ \(p[2]) に変更中"), true)
+        case "/stop", "/kill":
+            guard let a = agent(p.count > 1 ? p[1] : nil) else { return }
+            guard a.stoppable else { msg = (L("이 세션은 끌 수 없어", "このセッションは止められない"), false); return }
+            stop(a)
+            msg = (a.status == .done ? L("→ \(a.title) 지웠어", "→ \(a.title) を削除") : L("→ \(a.title) 종료", "→ \(a.title) を終了"), true)
+        case "/clean":
+            let done = agents.agents.filter { $0.status == .done && $0.bgId != nil }
+            done.forEach(stop)
+            msg = (L("→ 완료된 세션 \(done.count)개 지웠어", "→ 完了セッション\(done.count)件を削除"), true)
+        case "/style": toggleStyle()
+        case "/lang": toggleLang()
+        default:
+            msg = (L("모르는 명령이야. / 를 쳐봐", "知らないコマンドだよ。/ を打ってみて"), false)
         }
     }
 }
@@ -524,13 +722,22 @@ struct AgentGroup: View {
     var limit = 99
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
+            if term {
+                HStack(spacing: 6) {
+                    Text("# \(status.label)")
+                    Rectangle().fill(Pal.line).frame(height: 1)
+                    Text("\(agents.count)")
+                }
+                .font(round(10.5, .medium)).foregroundStyle(Pal.muted).padding(.horizontal, 4)
+            } else {
             HStack(spacing: 6) {
                 Text(status.label).font(round(11.5, .heavy)).foregroundStyle(Pal.ink)
                 Text("\(agents.count)").font(round(10.5, .heavy)).foregroundStyle(Pal.onPastel)
-                    .padding(.horizontal, 6).background(Capsule().fill(status.color))
-                    .overlay(Capsule().strokeBorder(Pal.ink, lineWidth: 1.2))
+                    .padding(.horizontal, 6).background(Pill().fill(soft(status.color)))
+                    .overlay(Pill().strokeBorder(Pal.stroke, lineWidth: lw(1.2)))
             }
             .padding(.leading, 4)
+            }
             VStack(spacing: 0) {
                 ForEach(Array(agents.prefix(limit).enumerated()), id: \.element.id) { i, a in
                     if i > 0 {
@@ -549,7 +756,6 @@ struct AgentGroup: View {
     }
 }
 
-extension Pal { static let line = Color(0xf0dfcb, 0x4a3a31) }
 
 @MainActor func agentMood(_ s: AgentStore) -> Mood {
     if s.count(.needsInput) > 0 { return .panic }
@@ -561,10 +767,39 @@ struct MenuPanel: View {
     @Bindable var store: Store
     @Bindable var agents: AgentStore
     @AppStorage("lang") private var langRaw = Lang.ko.rawValue
+    @AppStorage("style") private var styleRaw = UIStyle.cute.rawValue
     @State private var showSettings = false
+    @State private var paletteOpen = false
+
+    var termHeader: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 7) {
+                ForEach([0xff5f57, 0xfebc2e, 0x3a3a42] as [UInt32], id: \.self) { c in
+                    Circle().fill(T(c)).frame(width: 11, height: 11)
+                }
+                Spacer()
+                Text("~/claude-kun").foregroundStyle(Pal.muted)
+                Spacer()
+                Text("\(agents.agents.count) sessions").foregroundStyle(Pal.muted)
+            }
+            .font(round(11, .regular))
+            HStack(spacing: 12) {
+                Mascot(size: 44, mood: agentMood(agents))
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("claude-kun").font(round(13, .bold)).foregroundStyle(Pal.sage)
+                    (Text(agents.count(.needsInput) > 0 ? "! " : "❯ ").foregroundStyle(agents.count(.needsInput) > 0 ? Pal.coral : Pal.sage)
+                     + Text(line).foregroundStyle(Pal.ink))
+                        .font(round(12, .medium)).fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+    }
+
+    func setStyle(_ st: UIStyle) { styleRaw = st.rawValue; refit() }
 
     func setLang(_ l: Lang) {
         langRaw = l.rawValue
+        refit()
         // 훅(node)도 같은 언어로 말하게 파일로도 남김
         try? l.rawValue.write(toFile: "\(home)/.token-watch/lang", atomically: true, encoding: .utf8)
     }
@@ -579,6 +814,7 @@ struct MenuPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
+            if term { termHeader } else {
             // 헤더: 마스코트 + 말풍선
             HStack(alignment: .center, spacing: 12) {
                 Mascot(size: 58, mood: agentMood(agents))
@@ -591,21 +827,36 @@ struct MenuPanel: View {
                 }
             }
 
-            // 요약 칩
+            }
+
+            // 요약 칩 (터미널은 점선 상자 안 색 글자)
+            if term {
+                HStack(spacing: 12) {
+                    ForEach(AgentStatus.allCases, id: \.rawValue) { s in
+                        let n = agents.count(s)
+                        Text("● \(s.label) \(n)").foregroundStyle(n > 0 ? s.color : Pal.muted.opacity(0.6))
+                    }
+                    Spacer(minLength: 0)
+                }
+                .font(round(11, .medium))
+                .padding(.horizontal, 8).padding(.vertical, 6)
+                .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Pal.line, style: StrokeStyle(lineWidth: 1, dash: [3, 3])))
+            } else {
             HStack(spacing: 6) {
                 ForEach(AgentStatus.allCases, id: \.rawValue) { s in
                     let n = agents.count(s)
                     Text("\(s.label) \(n)").font(round(10.5, .bold)).foregroundStyle(n > 0 ? Pal.onPastel : Pal.muted)
                         .padding(.horizontal, 8).padding(.vertical, 3)
-                        .background(Capsule().fill(n > 0 ? s.color : Pal.card))
-                        .overlay(Capsule().strokeBorder(Pal.ink, lineWidth: 1.4))
+                        .background(Pill().fill(soft(n > 0 ? s.color : Pal.card)))
+                        .overlay(Pill().strokeBorder(Pal.stroke, lineWidth: lw(1.4)))
                         .opacity(n > 0 ? 1 : 0.55)
                 }
+            }
             }
 
             if agents.cmuxNeedsAuth { CmuxAuthCard(agents: agents) }
 
-            MaybeScroll {
+            MaybeScroll(reserve: 330 + (showSettings ? 230 : 0) + (paletteOpen ? 190 : 0)) {
                 VStack(alignment: .leading, spacing: 14) {
                     if agents.agents.isEmpty {
                         Text(L("돌아가는 세션이 없어.", "動いてるセッションはないよ。")).font(round(12, .medium)).foregroundStyle(Pal.muted)
@@ -618,6 +869,11 @@ struct MenuPanel: View {
                 }
                 .padding(.horizontal, 2).padding(.bottom, 6)
             }
+
+            CommandBar(agents: agents,
+                       toggleLang: { setLang(lang == .ko ? .ja : .ko) },
+                       toggleStyle: { setStyle(term ? .cute : .terminal) },
+                       paletteOpen: $paletteOpen)
 
             // 토큰은 한 줄로만 + 설정
             HStack(spacing: 8) {
@@ -644,6 +900,16 @@ struct MenuPanel: View {
                         }
                     }
                     Rectangle().fill(Pal.line).frame(height: 1)
+                    HStack(spacing: 8) {
+                        Text(L("스타일", "スタイル")).font(round(12, .heavy)).foregroundStyle(Pal.ink)
+                        Spacer()
+                        ForEach(UIStyle.allCases, id: \.self) { st in
+                            Button(st == .cute ? L("귀여움", "かわいい") : L("터미널", "ターミナル")) { setStyle(st) }
+                                .buttonStyle(PopButton(fill: styleRaw == st.rawValue ? Pal.coral : Pal.card,
+                                                       text: styleRaw == st.rawValue ? Pal.onPastel : Pal.ink, small: true))
+                        }
+                    }
+                    Rectangle().fill(Pal.line).frame(height: 1)
                     CmuxPasswordRow(agents: agents)
                     Rectangle().fill(Pal.line).frame(height: 1)
                     HStack {
@@ -658,10 +924,24 @@ struct MenuPanel: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .id(langRaw)   // 언어 바뀌면 L() 문구 전부 다시 그림
         .padding(16).padding(.bottom, 4)
         .frame(width: 400)
         .background(DotBackground())
+        .id(langRaw + styleRaw)   // 언어·스타일 바뀌면 배경까지 통째로 다시 그림 (안쪽에만 두면 배경 점무늬가 옛 색으로 남았음)
+    }
+
+    /// 스타일을 바꾸면 내용 높이가 달라지는데 메뉴바 창은 옛 높이 그대로 남아서, 창을 내용에 맞게 다시 맞춤
+    func refit() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            for w in NSApp.windows where w.className.contains("MenuBarExtra") {
+                guard let v = w.contentView else { continue }
+                let h = v.fittingSize.height
+                var f = w.frame
+                f.origin.y += f.height - h   // 위쪽(메뉴바) 고정, 아래만 줄이고 늘림
+                f.size.height = h
+                w.setFrame(f, display: true)
+            }
+        }
     }
 }
 
@@ -699,8 +979,8 @@ struct CmuxPasswordRow: View {
             SecureField(CmuxPass.get() == nil ? "" : "••••", text: $pw)
                 .textFieldStyle(.plain).font(round(12, .medium))
                 .padding(.horizontal, 8).padding(.vertical, 4)
-                .background(Capsule().fill(Pal.card))
-                .overlay(Capsule().strokeBorder(Pal.ink, lineWidth: 1.4))
+                .background(Pill().fill(soft(Pal.card)))
+                .overlay(Pill().strokeBorder(Pal.stroke, lineWidth: lw(1.4)))
                 .onSubmit(save)
             if let r = result {
                 Text(r ? "✓" : "✗").font(round(13, .heavy)).foregroundStyle(r ? Color.green : Pal.coral)
@@ -730,17 +1010,25 @@ struct CmuxPasswordRow: View {
 /// ImageRenderer 는 ScrollView 안을 못 그려서 --render 때만 평평하게
 let renderMode = CommandLine.arguments.contains("--render")
 struct MaybeScroll<C: View>: View {
+    /// 목록 말고 창에 같이 뜨는 것들(헤더·명령줄·설정 카드) 몫. 이만큼 빼고 남는 높이에서 스크롤
+    var reserve: CGFloat = 330
     @ViewBuilder var content: C
     @State private var h: CGFloat = 300
     var body: some View {
         if renderMode { content } else {
             // MenuBarExtra 창은 ScrollView 최소 높이로 줄어들어서, 내용 높이를 재서 직접 지정 (화면 높이에서 헤더·푸터 몫 빼고 상한)
-            ScrollView {
-                content.background(GeometryReader { g in
-                    Color.clear.onAppear { h = g.size.height }.onChange(of: g.size.height) { h = $1 }
-                })
+            ScrollViewReader { proxy in
+                ScrollView {
+                    content.background(GeometryReader { g in
+                        Color.clear.onAppear { h = g.size.height }.onChange(of: g.size.height) { h = $1 }
+                    })
+                }
+                .onChange(of: agentStore.cursor) { _, c in
+                    guard let c, agentStore.agents.indices.contains(c) else { return }
+                    withAnimation(.easeOut(duration: 0.12)) { proxy.scrollTo(agentStore.agents[c].id) }
+                }
             }
-            .frame(height: min(h, (NSScreen.main?.visibleFrame.height ?? 900) - 260))
+            .frame(height: min(h, (NSScreen.main?.visibleFrame.height ?? 900) - reserve))
             .scrollIndicators(.never)
         }
     }
@@ -815,12 +1103,13 @@ if CommandLine.arguments.contains("--render") {
 
 // 앱 아이콘: --icon <out.png> (1024px, scripts/make-app.sh 에서 사용)
 if let i = CommandLine.arguments.firstIndex(of: "--icon"), i + 1 < CommandLine.arguments.count {
+    forceCute = true
     MainActor.assumeIsolated {
         NSApplication.shared.appearance = NSAppearance(named: .aqua)
         let icon = ZStack {
             RoundedRectangle(cornerRadius: 185).fill(Pal.bg)
             DotBackground().clipShape(RoundedRectangle(cornerRadius: 185))
-            RoundedRectangle(cornerRadius: 185).strokeBorder(Pal.ink, lineWidth: 24)
+            RoundedRectangle(cornerRadius: 185).strokeBorder(Pal.stroke, lineWidth: lw(24))
             Mascot(size: 620, mood: .ok, animate: false)
         }
         .frame(width: 824, height: 824).padding(100)

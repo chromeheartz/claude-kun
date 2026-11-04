@@ -392,6 +392,8 @@ func stop(_ a: Agent) {
 final class AgentStore {
     var agents: [Agent] = []
     var cmuxNeedsAuth = false
+    /// 방향키로 고른 세션 (agents 인덱스). 명령줄이 비어 있을 때 ↑↓ 로 움직이고 Enter 로 이동
+    var cursor: Int?
     /// 이름 바꾸기 낙관적 반영: id → (새 이름, 기한). 실제 제목이 따라오면 지우고, 기한 넘기면 원래대로 돌아감
     private var optimistic: [String: (title: String, until: Date)] = [:]
 
